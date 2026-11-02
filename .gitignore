@@ -1,0 +1,34 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+src/__pycache__/
+
+# Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment Configurations & Secrets
+.env
+.env.*
+!.env.example
+
+# Testing and Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editor / IDE artifacts
+.vscode/
+.idea/
+
+# Obsidian vault metadata
+.obsidian/
+adk_ops_docs/.obsidian/
+agentic_rag_docs/.obsidian/
+
+# OS artifacts
+Thumbs.db
+.DS_Store
