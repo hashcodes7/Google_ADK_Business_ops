@@ -1,5 +1,11 @@
 # Milestone 1: Run & Execution Guide (`v1_run_steps.md`)
 
+> ### ⚡ Primary Command
+> ```powershell
+> python run.py
+> ```
+> *(Or direct Uvicorn launch: `uvicorn src.main:app --reload --host 0.0.0.0 --port 8000`)*
+
 This step-by-step operational guide walks you through setting up, launching, trying, and verifying the **Milestone 1** backend application from scratch.
 
 ---

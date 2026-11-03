@@ -1,5 +1,11 @@
 # Milestone 4: Full Architecture & Testing Configuration (`v4_architecture_and_testing.md`)
 
+> ### ⚡ Primary Command
+> ```powershell
+> pytest -s --env-file dev
+> ```
+> *(Or quiet single-line summary: `pytest -s -q --env-file dev`)*
+
 This document outlines the complete codebase architecture and evolution in **Milestone 4 (v4)**, introducing **Dynamic Environment Injection for Testing** (`tests/conftest.py`), **Free-Tier Resilient Model Configuration (`gemini-flash-lite-latest`)**, and **Clean Single-Line Output Reporting** (`💚 [Result] ...`).
 
 ---

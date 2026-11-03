@@ -1,5 +1,11 @@
 # Milestone 3: API & Schema Blueprint Cookbook (`v3_api_and_schema_cookbook.md`)
 
+> ### ⚡ Primary Command
+> ```powershell
+> python -c "from app.schemas.product import ProductCreate; print(ProductCreate(title='Sample', price=29.99, description='Desc', category='clothing'))"
+> ```
+> *(Or start service to test in Swagger: `python run.py --env dev`)*
+
 This guide serves as a practical, copy-pasteable reference whenever you want to add a new API endpoint (GET or POST) along with strict Pydantic schemas in this project.
 
 ---

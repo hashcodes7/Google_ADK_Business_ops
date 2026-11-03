@@ -1,5 +1,11 @@
 # Milestone 3: Full Architecture & Services Layer (`v3_architecture_and_services.md`)
 
+> ### ⚡ Primary Command
+> ```powershell
+> python run.py --env dev
+> ```
+> *(Starts FastAPI with hot-reload, loading `environments/.env.dev` for schema validation & service layers)*
+
 This document outlines the complete codebase architecture and evolution in **Milestone 3 (v3)**, introducing the **Service Layer** (`app/services/`) and **Schema Validation Layer** (`app/schemas/`) alongside the integration layer and FastAPI core.
 
 ---

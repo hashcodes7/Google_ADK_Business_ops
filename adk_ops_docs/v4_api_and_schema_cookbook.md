@@ -1,5 +1,11 @@
 # Milestone 4: API, Schema & Testing Blueprint Cookbook (`v4_api_and_schema_cookbook.md`)
 
+> ### ⚡ Primary Command
+> ```powershell
+> pytest -s --env-file dev
+> ```
+> *(Or test schemas directly: `pytest -s tests/test_products.py --env-file dev`)*
+
 This guide serves as a practical, copy-pasteable reference whenever you want to add a new API endpoint (GET or POST), define strict Pydantic schemas, and write unit/integration tests with dynamic environment file loading and clean single-line terminal outputs.
 
 ---

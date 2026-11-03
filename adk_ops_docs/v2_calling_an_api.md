@@ -1,5 +1,11 @@
 # Milestone 2: How We Call an External API (`v2_calling_an_api.md`)
 
+> ### ⚡ Primary Command
+> ```powershell
+> python -c "from dotenv import load_dotenv; load_dotenv('environments/.env.dev'); from app.integrations.ecommerce_client import ecommerce_client; print(ecommerce_client.get_product(1))"
+> ```
+> *(Or launch server: `python run.py --env dev`)*
+
 This guide explains the foundational pattern for calling an external API in Python within this project. It documents the core architecture, configuration flow, execution mechanics, and error-handling principles implemented in **v2**.
 
 ---
