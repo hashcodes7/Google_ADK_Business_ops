@@ -1,30 +1,31 @@
 import os
 from pathlib import Path
+import pytest
 import requests
-from dotenv import load_dotenv
 
-load_dotenv(Path(__file__).resolve().parents[2] / ".env.dsev")
-API_KEY = os.getenv("Gemini_API_KEY", "")
-if not API_KEY: raise ValueError("No API key present")
 
-url = "https://generativelanguage.googleapis.com/v1beta/models"
+def get_api_key():
+    return os.getenv("GOOGLE_API_KEY") or os.getenv("Gemini_API_KEY") or ""
 
-try:
-    response = requests.get(
-        url,
-        headers={"x-goog-api-key": API_KEY},
-        params={"pageSize": 5},
-        timeout=(10, 30)
-    )
 
-    print("HTTP Status:", response.status_code)
-    print("Response:", response.json())
+def test_gemini_model_list():
+    api_key = get_api_key()
+    if not api_key:
+        pytest.skip("No Google / Gemini API key found in active environment credentials.")
 
-except requests.exceptions.ConnectTimeout:
-    print("Connection timeout: Could not connect to Google.")
+    url = "https://generativelanguage.googleapis.com/v1beta/models"
 
-except requests.exceptions.ReadTimeout:
-    print("Read timeout: Google did not respond in time.")
+    try:
+        response = requests.get(
+            url,
+            headers={"x-goog-api-key": api_key},
+            params={"pageSize": 5},
+            timeout=(10, 30),
+        )
+        assert response.status_code in (200, 429), f"Unexpected status code: {response.status_code}"
+    except requests.exceptions.RequestException as exc:
+        pytest.skip(f"Network error querying Gemini model list: {exc}")
 
-except requests.exceptions.RequestException as error:
-    print("Network error:", error)
+
+if __name__ == "__main__":
+    test_gemini_model_list()

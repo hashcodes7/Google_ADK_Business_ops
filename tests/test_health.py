@@ -1,12 +1,15 @@
 from fastapi.testclient import TestClient
-from src.main import app
+from app.main import app
 
 
 def test_health_endpoint():
     with TestClient(app) as client:
-        response = client.get("/health")
+        response = client.get("/api/v1/health")
         assert response.status_code == 200
-        assert response.json() == {"status": "healthy"}
+        assert response.json() == {
+            "status": "healthy",
+            "service": "business-dashboard",
+        }
 
 
 def test_root_endpoint():
@@ -14,6 +17,6 @@ def test_root_endpoint():
         response = client.get("/")
         assert response.status_code == 200
         data = response.json()
-        assert data["status"] == "ok"
-        assert "environment" in data
-        assert "ecommerce_api" in data
+        assert data["status"] == "running"
+        assert "application" in data
+        assert "version" in data
