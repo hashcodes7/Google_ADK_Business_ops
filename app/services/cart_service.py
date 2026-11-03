@@ -1,7 +1,6 @@
+from app.application.cart_ops import cart_operations
 
-from app.integrations.ecommerce_client import ecommerce_client
 
-
-def get_all_carts():
+def get_all_carts(context=None):
     """Retrieve all shopping carts."""
-    return ecommerce_client.get_all_carts()
+    return cart_operations.get_all_carts(context)

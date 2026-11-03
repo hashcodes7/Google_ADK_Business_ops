@@ -23,3 +23,8 @@ class ResourceNotFoundException(ApplicationException):
 class ValidationException(ApplicationException):
     def __init__(self, message: str):
         super().__init__(message, status_code=400)
+
+
+class UnauthorizedException(ApplicationException):
+    def __init__(self, message: str = "Unauthorized: Operation not permitted for this actor or role."):
+        super().__init__(message, status_code=403)
