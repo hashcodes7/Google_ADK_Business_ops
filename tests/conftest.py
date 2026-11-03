@@ -1,7 +1,15 @@
 import os
+import sys
 from pathlib import Path
 import pytest
 from dotenv import load_dotenv
+
+# Ensure stdout and stderr handle utf-8 characters (emojis like 💚) on Windows terminals
+if sys.platform == "win32":
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 
 def pytest_addoption(parser):

@@ -1,16 +1,18 @@
-# Business Operations Dashboard & Google ADK Backend (v4)
+# Business Operations Dashboard & Google ADK Backend (v5)
 
-A production-ready enterprise backend architecture combining **FastAPI**, **Pydantic Validation Schemas**, a dedicated **Service Layer**, **Google Agent Development Kit (ADK)** with Gemini, an **HTTPX Integration Layer**, and a **Dynamic Environment-Injected Test Suite**.
+A production-ready enterprise backend architecture combining **FastAPI Modular Route Controllers**, **Pydantic Validation Schemas**, a dedicated **Service Layer**, **Google Agent Development Kit (ADK)** with Gemini, an **HTTPX Integration Layer**, and a **Dynamic Environment-Injected Test Suite**.
 
 ---
 
-## What's New in v4: Dynamic Test Environment Injection
+## What's New in v5: Modular API Routing Layer
 
-In **v4**, the testing framework is enhanced with dynamic configuration loading:
-- **`pytest --env-file` CLI Hook (`tests/conftest.py`)**: Enables developers and CI/CD pipelines to run test suites against specific environments (e.g., `pytest --env-file dev` or `pytest --env-file prod`).
-- **Pre-Collection Variable Normalization**: Synchronizes environment aliases (`Gemini_API_KEY` $\leftrightarrow$ `GOOGLE_API_KEY`, `ECOMMERCE_API_BASE_URL` $\leftrightarrow$ `ECOMMERCE_API_URL`) before modules are loaded.
-- **Updated Test Suite**: Aligned health and schema unit tests with the refactored `app/` architecture.
-- **Comprehensive Documentation**: Added `v4_architecture_and_testing.md` and `v4_api_and_schema_cookbook.md`.
+In **v5**, endpoint definitions are separated from business logic into dedicated route controllers:
+- **Modular Route Controllers (`app/api/routes/`)**:
+  - `products.py`: Implements `GET /`, `GET /{product_id}`, `GET /category/{category}`, and `POST /` with `ProductCreate` and `ProductResponse` validation.
+  - `carts.py`: Implements `GET /` retrieving shopping cart records.
+- **Hierarchical Router Aggregation (`app/api/router.py`)**: Sub-routers are mounted cleanly into `api_router` under the `/api/v1` prefix.
+- **Route Integration Tests (`tests/test_routes.py`)**: End-to-end tests for all route handlers reporting single-line `💚 [Result]` outputs.
+- **Milestone 5 Documentation**: Added `v5_architecture_and_routing.md` and `v5_route_implementation_cookbook.md`.
 
 ---
 
@@ -20,7 +22,10 @@ In **v4**, the testing framework is enhanced with dynamic configuration loading:
 Business_ops_GoogleADK/
 ├── app/                          # Main FastAPI application package
 │   ├── api/
-│   │   └── router.py             # Versioned API routes registration
+│   │   ├── routes/               # [v5] Modular API route controllers
+│   │   │   ├── carts.py          # Carts endpoints
+│   │   │   └── products.py       # Products CRUD endpoints
+│   │   └── router.py             # Versioned API routes registration & aggregator
 │   ├── core/
 │   │   ├── config.py             # Environment-driven Pydantic settings
 │   │   ├── exceptions.py         # Custom application exception hierarchy
@@ -41,8 +46,10 @@ Business_ops_GoogleADK/
 │   ├── v2_calling_an_api.md      # Milestone 2 API integration guide
 │   ├── v3_architecture_and_services.md # Milestone 3 architecture guide
 │   ├── v3_api_and_schema_cookbook.md   # Milestone 3 schema cookbook
-│   ├── v4_architecture_and_testing.md  # [v4] Milestone 4 architecture & test guide
-│   └── v4_api_and_schema_cookbook.md   # [v4] Milestone 4 cookbook & test guide
+│   ├── v4_architecture_and_testing.md  # Milestone 4 test architecture guide
+│   ├── v4_api_and_schema_cookbook.md   # Milestone 4 test cookbook
+│   ├── v5_architecture_and_routing.md  # [v5] Milestone 5 architecture & routing guide
+│   └── v5_route_implementation_cookbook.md # [v5] Milestone 5 route cookbook
 ├── environments/
 │   ├── .env.example              # Environment template (safe for git)
 │   ├── .env.dev                  # Development environment variables (git-ignored)
@@ -51,11 +58,12 @@ Business_ops_GoogleADK/
 │   ├── agent/
 │   │   ├── api_key_test.py       # Direct Gemini API connectivity test
 │   │   └── model_list.py         # Gemini model catalog inspection test
-│   ├── conftest.py               # [v4] Dynamic pytest --env-file hook
+│   ├── conftest.py               # Dynamic pytest --env-file hook & encoding fix
 │   ├── test_health.py            # Health endpoint tests
-│   └── test_products.py          # Product schema & service unit tests
+│   ├── test_products.py          # Product schema & service unit tests
+│   └── test_routes.py            # [v5] Route controller integration tests
 ├── .gitignore                    # Hardened Git ignore configuration
-├── PROJECT_DOCUMENTATION.md      # Root project documentation (v4)
+├── PROJECT_DOCUMENTATION.md      # Root project documentation (v5)
 ├── pytest.ini                    # Pytest configuration
 ├── requirements.txt              # Production and runtime dependencies
 └── run.py                        # Multi-environment CLI server runner
@@ -68,27 +76,23 @@ Business_ops_GoogleADK/
 ### 1. Application Execution
 
 ```powershell
-# Activate the virtual environment
-.\.venv\Scripts\Activate.ps1
-
 # Run development server (loads environments/.env.dev with hot-reload)
 python run.py --env dev
-
-# Run production server
-python run.py --env prod
 ```
 
-### 2. Running Tests with Dynamic Environment Selection
+- Swagger UI: `http://localhost:8000/docs`
+- Health Endpoint: `http://localhost:8000/api/v1/health`
+- Products Catalog: `http://localhost:8000/api/v1/products/`
+- Shopping Carts: `http://localhost:8000/api/v1/carts/`
+
+### 2. Testing
 
 ```powershell
-# Run with development credentials
-pytest --env-file dev
+# Run route integration tests:
+pytest -s tests/test_routes.py --env-file dev
 
-# Run with production credentials
-pytest --env-file prod
-
-# Run unit tests specifically
-pytest tests/test_products.py --env-file dev
+# Run all tests:
+pytest -s -q --env-file dev
 ```
 
 ---
