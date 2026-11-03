@@ -2,7 +2,8 @@
 __pycache__/
 *.py[cod]
 *$py.class
-src/__pycache__/
+app/**/__pycache__/
+tests/**/__pycache__/
 
 # Virtual Environments
 .venv/
@@ -13,7 +14,16 @@ ENV/
 # Environment Configurations & Secrets
 .env
 .env.*
+environments/.env.*
 !.env.example
+!environments/.env.example
+
+# Database & ADK Session Artifacts
+*.db
+*.sqlite
+*.sqlite3
+.adk/
+**/.adk/
 
 # Testing and Coverage
 .pytest_cache/
