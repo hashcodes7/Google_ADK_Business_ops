@@ -1,6 +1,16 @@
-# Business Operations Dashboard & Google ADK Backend
+# Business Operations Dashboard & Google ADK Backend (v2)
 
-A robust backend architecture integrating FastAPI with Google Agent Development Kit (ADK) and Gemini 2.5 Flash for enterprise business and e-commerce operations.
+A production-ready enterprise backend architecture combining **FastAPI**, **Google Agent Development Kit (ADK)** with Gemini 2.5 Flash, and a dedicated **HTTPX Integration Layer** for upstream e-commerce services.
+
+---
+
+## What's New in v2: Integration Layer Architecture
+
+In **v2**, the backend introduces a decoupled external service integration layer (`app/integrations/`):
+- **Centralized HTTP Client (`EcommerceClient`)**: Consolidates upstream calls using `httpx` with managed timeouts and connection lifecycle.
+- **Robust Exception Translation**: Automatically maps upstream HTTP status codes (e.g. 404, 5xx) and connection timeouts into domain exceptions (`ResourceNotFoundException`, `ExternalAPIException`).
+- **Safe URI Encoding**: Sanitizes dynamic path segments (such as product categories) with `urllib.parse.quote`.
+- **Dependency Cleanliness**: Cleaned redundant dependency listings in `requirements.txt`.
 
 ---
 
@@ -8,30 +18,33 @@ A robust backend architecture integrating FastAPI with Google Agent Development 
 
 ```
 Business_ops_GoogleADK/
-├── app/                      # Main FastAPI application package
+├── app/                          # Main FastAPI application package
 │   ├── api/
-│   │   └── router.py         # Versioned API routes registration
+│   │   └── router.py             # Versioned API routes registration
 │   ├── core/
-│   │   ├── config.py         # Environment-driven Pydantic settings
-│   │   ├── exceptions.py     # Custom application exception hierarchy
-│   │   └── logging.py        # Centralized logging configuration
-│   └── main.py               # FastAPI factory & lifespan setup
+│   │   ├── config.py             # Environment-driven Pydantic settings
+│   │   ├── exceptions.py         # Custom application exception hierarchy
+│   │   └── logging.py            # Centralized logging configuration
+│   ├── integrations/             # [v2] External service integration layer
+│   │   └── ecommerce_client.py   # HTTPX e-commerce API client & error handler
+│   └── main.py                   # FastAPI factory & lifespan setup
 ├── agenticss/
-│   └── agent.py              # Google ADK Agent definition & tool functions
+│   └── agent.py                  # Google ADK Agent definition & tool functions
 ├── environments/
-│   ├── .env.example          # Environment template (safe for git)
-│   ├── .env.dev              # Development environment variables (git-ignored)
-│   └── .env.prod             # Production environment variables (git-ignored)
+│   ├── .env.example              # Environment template (safe for git)
+│   ├── .env.dev                  # Development environment variables (git-ignored)
+│   └── .env.prod                 # Production environment variables (git-ignored)
 ├── tests/
 │   ├── agent/
-│   │   ├── api_key_test.py   # Direct Gemini API connectivity test
-│   │   └── model_list.py     # Gemini model catalog inspection test
-│   ├── test_health.py        # Health endpoint tests
-│   └── test_products.py      # Product endpoint tests
-├── .gitignore                # Git ignore configuration
-├── pytest.ini                # Pytest configuration
-├── requirements.txt          # Production and runtime dependencies
-└── run.py                    # Multi-environment CLI server runner
+│   │   ├── api_key_test.py       # Direct Gemini API connectivity test
+│   │   └── model_list.py         # Gemini model catalog inspection test
+│   ├── test_health.py            # Health endpoint tests
+│   └── test_products.py          # Product endpoint tests
+├── .gitignore                    # Hardened Git ignore configuration
+├── PROJECT_DOCUMENTATION.md      # Full architecture and API reference (this file)
+├── pytest.ini                    # Pytest configuration
+├── requirements.txt              # Production and runtime dependencies
+└── run.py                        # Multi-environment CLI server runner
 ```
 
 ---
@@ -40,7 +53,7 @@ Business_ops_GoogleADK/
 
 ### 1. Environment Setup
 
-Create and activate a virtual environment:
+Create and activate a Python virtual environment:
 
 ```bash
 # Windows (PowerShell)
@@ -48,7 +61,7 @@ python -m venv .venv
 .venv\Scripts\Activate.ps1
 ```
 
-Install dependencies:
+Install project dependencies:
 
 ```bash
 pip install -r requirements.txt
@@ -56,13 +69,13 @@ pip install -r requirements.txt
 
 ### 2. Configure Environment Variables
 
-Create your local `.env.dev` from the template:
+Create your local `.env.dev` file from the provided template:
 
 ```bash
 cp environments/.env.example environments/.env.dev
 ```
 
-Populate the required configuration in `environments/.env.dev`:
+Ensure the following variables are set in `environments/.env.dev`:
 
 ```ini
 APP_ENV=dev
@@ -77,86 +90,114 @@ LOG_LEVEL=INFO
 
 ### 3. Run the Application
 
-Start the FastAPI application with `run.py`:
+Start the FastAPI application via `run.py`:
 
 ```bash
-# Development mode (with hot-reload and environments/.env.dev)
+# Development mode (with live reload enabled and environments/.env.dev loaded)
 python run.py --env dev
 
-# Production mode (without reload and environments/.env.prod)
+# Production mode (reload disabled and environments/.env.prod loaded)
 python run.py --env prod
 ```
 
 - API Base URL: `http://localhost:8000`
-- Swagger UI Documentation: `http://localhost:8000/docs`
-- Health Endpoint: `http://localhost:8000/api/v1/health`
+- Swagger UI / OpenAPI Specs: `http://localhost:8000/docs`
+- Health Check: `http://localhost:8000/api/v1/health`
 
 ---
 
 ## Detailed File, Class, and Method Reference
 
-### 1. Application Entrypoint & Server: `run.py`
+### 1. External Integration Layer: `app/integrations/ecommerce_client.py` *(New in v2)*
 
-Handles command-line environment switching and launches the Uvicorn ASGI server.
+Provides client abstraction over upstream e-commerce REST endpoints using `httpx`.
 
-- **Variables & Flow:**
-  - `parser`: `argparse.ArgumentParser` configured to accept `--env` (`dev` or `prod`, default: `dev`).
-  - `load_dotenv(f"environments/.env.{args.env}", override=True)`: Dynamically loads the corresponding environment variables before FastAPI initializes.
-  - `uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=args.env == "dev")`: Starts the server with live reload enabled strictly for dev mode.
+- **Classes:**
+  - `EcommerceClient`:
+    - `__init__(self)`: Reads `settings.ECOMMERCE_API_URL`, strips trailing slashes, and initializes the default request timeout to `10.0` seconds.
+    - `_request(self, method: str, endpoint: str, **kwargs)`: Private core helper method.
+      - Creates a scoped `httpx.Client(timeout=self.timeout)` session.
+      - Dispatches HTTP requests with the given method and endpoint.
+      - Handles `httpx.HTTPStatusError`:
+        - Logs error with HTTP status code and endpoint.
+        - Raises `ResourceNotFoundException` on `404`.
+        - Raises `ExternalAPIException` on other 4xx/5xx responses.
+      - Handles `httpx.RequestError`:
+        - Logs network connection errors.
+        - Raises `ExternalAPIException("Unable to connect to e-commerce backend.")`.
+      - Returns parsed JSON response dictionary or list.
+    - `get_all_products(self)`: Calls `GET /products` to retrieve the entire catalog.
+    - `get_product(self, product_id: int)`: Calls `GET /products/{product_id}` to retrieve a single product by ID.
+    - `get_products_by_category(self, category: str)`: Sanitizes the category string via `urllib.parse.quote(category, safe="")` and calls `GET /products/category/{category}`.
+    - `create_product(self, product_data: dict)`: Calls `POST /products` passing `json=product_data` to register a new item.
+    - `get_all_carts(self)`: Calls `GET /carts` to retrieve customer carts.
+- **Exported Singletons:**
+  - `ecommerce_client`: Pre-instantiated singleton instance of `EcommerceClient` ready for dependency injection or route handlers.
 
 ---
 
-### 2. FastAPI Factory & Lifespan: `app/main.py`
+### 2. Application Entrypoint & Server: `run.py`
 
-Defines the FastAPI application lifecycle, global exception handling, and root endpoints.
+Handles command-line environment switching and boots the Uvicorn ASGI server.
+
+- **Variables & Workflow:**
+  - `parser`: `argparse.ArgumentParser` instance accepting `--env` (`dev` or `prod`, defaults to `dev`).
+  - `load_dotenv(f"environments/.env.{args.env}", override=True)`: Dynamically loads the corresponding environment variables before the FastAPI application tree is initialized.
+  - `uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=args.env == "dev")`: Starts the ASGI server with hot-reload enabled strictly in dev mode.
+
+---
+
+### 3. FastAPI Factory & Lifespan: `app/main.py`
+
+Configures the FastAPI application instance, lifespan hooks, and global exception handlers.
 
 - **Functions & Lifespans:**
-  - `lifespan(app: FastAPI)`: Asynchronous context manager managing application startup and shutdown events, logging application startup state.
-  - `application_exception_handler(request: Request, exc: ApplicationException) -> JSONResponse`: Global exception handler that catches any custom `ApplicationException` and formats it into a uniform `{ "success": False, "error": exc.message }` JSON response with matching HTTP status codes.
-  - `root() -> dict`: Root GET (`/`) endpoint verifying service availability and returning application name, version, and running state.
+  - `lifespan(app: FastAPI)`: Asynchronous context manager handling application startup and shutdown lifecycle events with logging.
+  - `application_exception_handler(request: Request, exc: ApplicationException) -> JSONResponse`: Global exception interceptor catching any `ApplicationException` subclass and returning a uniform `{ "success": False, "error": exc.message }` JSON response with the corresponding HTTP status code.
+  - `root() -> dict`: GET `/` route verifying system health and reporting application metadata.
 
 ---
 
-### 3. Application Settings: `app/core/config.py`
+### 4. Application Settings: `app/core/config.py`
 
-Type-safe application configuration powered by Pydantic Settings.
+Type-safe settings management using Pydantic Settings.
 
 - **Classes:**
   - `Settings(BaseSettings)`:
     - *Fields:*
-      - `APP_NAME: str`: Display name of the backend service.
-      - `APP_VERSION: str`: Application semantic version.
-      - `DEBUG: bool`: Debug mode flag.
-      - `API_V1_PREFIX: str`: Base prefix for version 1 API routes (default: `/api/v1`).
-      - `ECOMMERCE_API_URL: str`: Target URL for the e-commerce upstream backend.
-      - `GOOGLE_API_KEY: str`: Gemini / Google ADK API key.
-      - `GOOGLE_GENAI_USE_VERTEXAI: bool`: Toggle between Google AI Studio and Vertex AI.
-      - `LOG_LEVEL: str`: Logging severity threshold (`DEBUG`, `INFO`, etc.).
+      - `APP_NAME: str`: Application display name (default: `"Business Operations Dashboard"`).
+      - `APP_VERSION: str`: Application version (default: `"1.0.0"`).
+      - `DEBUG: bool`: Debug toggle (default: `False`).
+      - `API_V1_PREFIX: str`: Prefix for API v1 routes (default: `"/api/v1"`).
+      - `ECOMMERCE_API_URL: str`: Base URL for upstream e-commerce service.
+      - `GOOGLE_API_KEY: str`: Google Gemini API key.
+      - `GOOGLE_GENAI_USE_VERTEXAI: bool`: Toggle Vertex AI mode.
+      - `LOG_LEVEL: str`: Log level threshold (default: `"INFO"`).
     - `model_config`: `SettingsConfigDict` configured with `case_sensitive=True` and `extra="ignore"`.
 - **Functions:**
-  - `get_settings() -> Settings`: LRU-cached singleton provider returning the cached `Settings` instance.
+  - `get_settings() -> Settings`: LRU-cached singleton provider returning the active configuration.
 
 ---
 
-### 4. Custom Exceptions: `app/core/exceptions.py`
+### 5. Custom Exceptions: `app/core/exceptions.py`
 
-Standardized exception hierarchy for application errors.
+Standard domain exception hierarchy.
 
 - **Classes & Constructors:**
   - `ApplicationException(Exception)`:
-    - `__init__(self, message: str, status_code: int = 500)`: Base exception defining error message and default HTTP status code 500.
+    - `__init__(self, message: str, status_code: int = 500)`: Root domain exception defining message and HTTP status code.
   - `ExternalAPIException(ApplicationException)`:
-    - `__init__(self, message: str)`: Raised when upstream external API calls fail; assigns HTTP status 502 (Bad Gateway).
+    - `__init__(self, message: str)`: Assigned HTTP status 502 (Bad Gateway) for external backend issues.
   - `ResourceNotFoundException(ApplicationException)`:
-    - `__init__(self, message: str)`: Raised when requested resources are missing; assigns HTTP status 404 (Not Found).
+    - `__init__(self, message: str)`: Assigned HTTP status 404 (Not Found) for missing resources.
   - `ValidationException(ApplicationException)`:
-    - `__init__(self, message: str)`: Raised on bad request or schema validation errors; assigns HTTP status 400 (Bad Request).
+    - `__init__(self, message: str)`: Assigned HTTP status 400 (Bad Request) for invalid payloads.
 
 ---
 
-### 5. Centralized Logging: `app/core/logging.py`
+### 6. Centralized Logging: `app/core/logging.py`
 
-Configures structured console logging across the application.
+Unified logging format across components.
 
 - **Functions:**
   - `setup_logging(level: str = "INFO") -> None`:
@@ -164,44 +205,40 @@ Configures structured console logging across the application.
 
 ---
 
-### 6. API Routing: `app/api/router.py`
+### 7. API Routing: `app/api/router.py`
 
-Defines versioned endpoint routing.
+FastAPI route organization.
 
 - **Objects & Endpoints:**
-  - `api_router`: `APIRouter` instance mounting versioned endpoints.
-  - `health_check() -> dict`: GET `/health` endpoint returning health status and service identifier.
+  - `api_router`: `APIRouter` instance managing version 1 routes.
+  - `health_check() -> dict`: GET `/health` route returning service status.
 
 ---
 
-### 7. Google ADK Agent: `agenticss/agent.py`
+### 8. Google ADK Agent: `agenticss/agent.py`
 
-Defines the e-commerce operations agent and tool functions using the Google Agent Development Kit (ADK).
+Autonomous agent integration using Google ADK and Gemini.
 
-- **Tool Functions:**
-  - `get_all_products() -> dict`: Fetches the entire product catalog from the e-commerce backend (`GET /products`).
-  - `get_product(product_id: int) -> dict`: Fetches a single product by its unique integer identifier (`GET /products/{product_id}`).
-  - `get_products_by_category(category: str) -> dict`: Queries products filtered by a category name (`GET /products/category/{category}`).
-  - `create_product(title: str, price: float, description: str, category: str, image: str = "") -> dict`: Posts a new product payload to the catalog (`POST /products`).
-  - `get_all_carts() -> dict`: Retrieves customer shopping cart data (`GET /carts`).
+- **Functions & Tools:**
+  - `get_all_products() -> dict`: Catalog retrieval tool.
+  - `get_product(product_id: int) -> dict`: Specific product retrieval tool.
+  - `get_products_by_category(category: str) -> dict`: Categorized retrieval tool.
+  - `create_product(title: str, price: float, description: str, category: str, image: str = "") -> dict`: Catalog creation tool.
+  - `get_all_carts() -> dict`: Shopping cart inspection tool.
 - **Agents:**
-  - `root_agent`: `Agent` instance configured with name `"ecommerce_agent"`, model `"gemini-2.5-flash"`, operational instructions, and tool bindings.
+  - `root_agent`: `Agent` instance configured with name `"ecommerce_agent"`, model `"gemini-2.5-flash"`, instructions, and registered toolset.
 
 ---
 
-### 8. Diagnostic Tests: `tests/agent/`
+### 9. Diagnostics & Testing: `tests/agent/`
 
-Verification scripts for testing Google AI connectivity and credentials without starting the full web server.
-
-- **`tests/agent/api_key_test.py`**:
-  - Loads environment settings and tests direct `generateContent` requests against `gemini-2.5-flash` using `x-goog-api-key`.
-- **`tests/agent/model_list.py`**:
-  - Tests connectivity by querying the `v1beta/models` endpoint for available Gemini models.
+- **`tests/agent/api_key_test.py`**: Verifies direct connectivity and API key validity against Google's `gemini-2.5-flash:generateContent` endpoint.
+- **`tests/agent/model_list.py`**: Verifies API credentials by querying Google AI Studio's `v1beta/models` catalog.
 
 ---
 
 ## Security & Git Hygiene
 
-- **Real secrets** (`.env.dev`, `.env.prod`) are strictly ignored via `.gitignore` and never committed.
-- **SQLite / ADK session databases** (`*.db`, `.adk/`) are ignored to prevent leaking runtime conversation states.
-- **Templates** (`environments/.env.example`) contain empty placeholder values for safe version control.
+- **Zero Secret Commits**: Real environment secrets (`environments/.env.dev`, `environments/.env.prod`) are permanently blocked by `.gitignore`.
+- **Database & State Protection**: SQLite files (`*.db`, `*.sqlite`, `*.sqlite3`) and ADK session cache (`.adk/`) are ignored.
+- **Clean Templates**: Only template configuration (`environments/.env.example`) with empty dummy values is tracked.
