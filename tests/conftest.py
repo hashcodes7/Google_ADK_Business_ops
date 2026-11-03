@@ -24,7 +24,6 @@ def pytest_configure(config):
 
     env_path = None
     if env_opt:
-        # Support shortcuts like '--env-file dev' or '--env-file prod'
         if env_opt in ("dev", "prod", "example"):
             candidate = Path(f"environments/.env.{env_opt}")
         else:
@@ -46,6 +45,7 @@ def pytest_configure(config):
             os.environ["Gemini_API_KEY"] = os.getenv("GOOGLE_API_KEY")
         if os.getenv("ECOMMERCE_API_BASE_URL") and not os.getenv("ECOMMERCE_API_URL"):
             os.environ["ECOMMERCE_API_URL"] = os.getenv("ECOMMERCE_API_BASE_URL")
-        print(f"\n[pytest] Loaded environment credentials from: {env_path}")
+        # Suppress verbose background app logs during test execution:
+        os.environ["LOG_LEVEL"] = "WARNING"
     elif env_opt:
         print(f"\n[pytest] WARNING: Requested env file '{env_opt}' not found.")

@@ -1,25 +1,25 @@
 # Milestone 4: API, Schema & Testing Blueprint Cookbook (`v4_api_and_schema_cookbook.md`)
 
-This guide serves as a practical, copy-pasteable reference whenever you want to add a new API endpoint (GET or POST), define strict Pydantic schemas, and write unit/integration tests with dynamic environment file loading.
+This guide serves as a practical, copy-pasteable reference whenever you want to add a new API endpoint (GET or POST), define strict Pydantic schemas, and write unit/integration tests with dynamic environment file loading and clean single-line terminal outputs.
 
 ---
 
 ## 1. The 4-Step Development Workflow
 
-Whenever you build a new endpoint or feature in this architecture, you work through 4 modular steps:
+Whenever you build a new endpoint or feature in this architecture, work through 4 clean steps:
 
 ```
 Step 1: Schema (app/schemas/)      ──> Define Request and Response data models
 Step 2: Service (app/services/)    ──> Implement domain business logic
 Step 3: Route (app/api/...)        ──> Bind HTTP verb, path, and schemas to route
-Step 4: Test (tests/...)           ──> Write unit/integration tests with --env-file
+Step 4: Test (tests/...)           ──> Write unit/integration tests with 💚 single-line output
 ```
 
 ---
 
 ## 2. Step 1: Defining Strict Schemas (`app/schemas/product.py`)
 
-Separate the **Create/Request payload** from the **Response payload**:
+Always separate the **Create/Request payload** from the **Response payload**:
 
 ```python
 from pydantic import BaseModel, Field
@@ -44,7 +44,7 @@ class ProductResponse(ProductCreate):
 
 ## 3. Step 2: Implementing the Service Logic (`app/services/product_service.py`)
 
-Services sit between the API routes and integrations/database. They hold domain logic:
+Services sit between API routes and integrations/database:
 
 ```python
 from app.integrations.ecommerce_client import ecommerce_client
@@ -79,7 +79,7 @@ def create_product(
 
 ## 4. Step 3: Implementing the REST Endpoints (GET & POST)
 
-Mount the endpoints in your router with strict `response_model` validation:
+Mount endpoints in your router with strict `response_model` validation:
 
 ```python
 from fastapi import APIRouter, status
@@ -125,11 +125,9 @@ def add_product(payload: ProductCreate):
 
 ---
 
-## 5. Step 4: Testing with Dynamic `.env` Injection (`tests/test_products.py`)
+## 5. Step 4: Writing Tests with 💚 Single-Line Output Reporting
 
-In **v4**, tests can dynamically pull credentials from any target environment file.
-
-### Writing the Test
+Write unit tests that output clean single-line summaries following the project standard:
 
 ```python
 import pytest
@@ -138,7 +136,6 @@ from app.services import product_service
 
 
 def test_product_create_schema_validation():
-    # Valid payload
     product = ProductCreate(
         title="Valid Product",
         price=19.99,
@@ -147,57 +144,41 @@ def test_product_create_schema_validation():
     )
     assert product.title == "Valid Product"
     assert product.price == 19.99
-
-
-def test_product_create_invalid_price():
-    # Invalid negative price triggers ValidationError
-    with pytest.raises(Exception):
-        ProductCreate(
-            title="Invalid",
-            price=-10.0,
-            description="desc",
-            category="cat",
-        )
+    # Standard output pattern:
+    print(f"\n💚 [Result] Schema validation -> test_products.py -> ProductCreate() -> validated payload: title='{product.title}', price=${product.price}")
 
 
 def test_product_service_mock(monkeypatch):
-    sample = {
-        "id": 1,
-        "title": "Mock Backpack",
-        "price": 50.0,
-        "description": "Mock desc",
-        "category": "bags",
-        "image": "",
-    }
+    sample = {"id": 1, "title": "Backpack", "price": 50.0, "description": "desc", "category": "bags", "image": ""}
     from app.integrations.ecommerce_client import ecommerce_client
     monkeypatch.setattr(ecommerce_client, "get_product", lambda pid: sample)
 
     res = product_service.get_product(1)
     assert res["id"] == 1
-    assert res["title"] == "Mock Backpack"
-```
-
-### Running the Tests with Target Environments
-
-```powershell
-# Run with dev environment:
-pytest tests/test_products.py --env-file dev
-
-# Run with production environment:
-pytest tests/test_products.py --env-file prod
-
-# Run with custom path:
-pytest tests/test_products.py --env-file environments/.env.dev
+    # Standard output pattern:
+    print(f"\n💚 [Result] Service call -> test_products.py -> product_service.get_product(1) -> returned: ID={res['id']}, Title='{res['title']}'")
 ```
 
 ---
 
-## 6. Summary Cheat Sheet for Adding New APIs Later
+## 6. Running Tests
 
-| Step | Location | What to do |
-|---|---|---|
-| **1. Define Schema** | `app/schemas/<entity>.py` | Create `<Entity>Create` for request validation and `<Entity>Response` for response serialization. |
-| **2. Add Service Method** | `app/services/<entity>_service.py` | Add Python function calling `ecommerce_client` or database. Keep HTTP logic out of here. |
-| **3. Mount Endpoint** | `app/api/...` | Use `@router.get` or `@router.post`, specify `response_model=<Entity>Response`, and call the service function. |
-| **4. Run Tests** | `tests/test_<entity>.py` | Run `pytest --env-file dev` to verify logic against the target configuration. |
-| **5. Check Docs** | `http://localhost:8000/docs` | FastAPI automatically renders the endpoint with full request schemas and response definitions. |
+```powershell
+# Run with environment injection and clean live output:
+pytest -s -q --env-file dev
+
+# Target a single test file:
+pytest -s tests/test_products.py --env-file dev
+```
+
+---
+
+## 7. Summary Cheat Sheet for Adding New APIs Later
+
+| Step | Location | What to do | Output Pattern |
+|---|---|---|---|
+| **1. Define Schema** | `app/schemas/<entity>.py` | Create `<Entity>Create` and `<Entity>Response` models. | N/A |
+| **2. Add Service Method** | `app/services/<entity>_service.py` | Implement domain function calling client or db. | N/A |
+| **3. Mount Endpoint** | `app/api/...` | Use `@router.get` / `@router.post` with `response_model`. | N/A |
+| **4. Add Test** | `tests/test_<entity>.py` | Test validations and route/service calls. | `print(f"\n💚 [Result] <Action> -> <file> -> <Call> -> <Outcome>")` |
+| **5. Run Pytest** | PowerShell / CLI | `pytest -s -q --env-file dev` | Terminal prints clean 💚 lines |

@@ -67,7 +67,7 @@ def get_all_carts() -> dict:
 
 root_agent = Agent(
     name="ecommerce_agent",
-    model="gemini-2.5-flash",
+    model=os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest"),
     description="An AI assistant for ecommerce operations.",
     instruction="""
     You are an ecommerce operations assistant.

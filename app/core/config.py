@@ -16,6 +16,7 @@ class Settings(BaseSettings):
 
     # Google ADK / Gemini
     GOOGLE_API_KEY: str = ""
+    GEMINI_MODEL: str = "gemini-flash-lite-latest"
     GOOGLE_GENAI_USE_VERTEXAI: bool = False
 
     # Logging
