@@ -6,7 +6,10 @@ from agents.tools.product_tools import (
     get_products_by_category,
     create_product,
 )
-from agents.tools.cart_tools import get_all_carts
+from agents.tools.cart_tools import (
+    get_all_carts,
+    inspect_cart_by_id,  # Agent-only tool
+)
 
 # ---------------- AGENT ----------------
 
@@ -22,11 +25,14 @@ root_agent = Agent(
     - Find products by ID.
     - Filter products by category.
     - Create new products.
-    - Retrieve shopping carts.
+    - Retrieve all shopping carts.
+    - Inspect a specific cart by ID using `inspect_cart_by_id`.
 
-    Use tools whenever required.
-    Ask for missing product details before creating a product.
-    Clearly report tool execution results.
+    Note:
+    - Use tools whenever required.
+    - Ask for missing details before creating a product.
+    - Clearly report tool execution results.
+    - You do not have permission or tools to create or provision user accounts.
     """,
     tools=[
         get_all_products,
@@ -34,5 +40,6 @@ root_agent = Agent(
         get_products_by_category,
         create_product,
         get_all_carts,
+        inspect_cart_by_id,  # Agent-only capability
     ]
 )

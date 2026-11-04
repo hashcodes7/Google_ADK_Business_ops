@@ -10,6 +10,16 @@ class ApplicationException(Exception):
         super().__init__(message)
 
 
+class AuthenticationException(ApplicationException):
+    def __init__(self, message: str = "Authentication required: Security context was not provided."):
+        super().__init__(message, status_code=401)
+
+
+class UnauthorizedException(ApplicationException):
+    def __init__(self, message: str = "Unauthorized: Operation not permitted for this actor or role."):
+        super().__init__(message, status_code=403)
+
+
 class ExternalAPIException(ApplicationException):
     def __init__(self, message: str):
         super().__init__(message, status_code=502)
@@ -23,8 +33,3 @@ class ResourceNotFoundException(ApplicationException):
 class ValidationException(ApplicationException):
     def __init__(self, message: str):
         super().__init__(message, status_code=400)
-
-
-class UnauthorizedException(ApplicationException):
-    def __init__(self, message: str = "Unauthorized: Operation not permitted for this actor or role."):
-        super().__init__(message, status_code=403)

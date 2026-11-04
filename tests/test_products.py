@@ -1,6 +1,7 @@
 import pytest
 from app.schemas.product import ProductCreate, ProductResponse
-from app.services import product_service
+from app.services.product_service import product_service
+from app.core.security import create_security_context
 
 
 def test_product_create_schema_validation():
@@ -55,7 +56,8 @@ def test_product_service_mock(monkeypatch):
 
     monkeypatch.setattr(ecommerce_client, "get_product", lambda pid: sample_data)
 
-    result = product_service.get_product(101)
+    context = create_security_context()
+    result = product_service.get_product(101, context=context)
     assert result["id"] == 101
     assert result["title"] == "Mock Product"
     print(f"\n💚 [Result] Service call -> test_products.py -> product_service.get_product(101) -> returned: ID={result['id']}, Title='{result['title']}'")

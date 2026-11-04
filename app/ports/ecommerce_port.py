@@ -2,7 +2,7 @@ from typing import Any, Protocol
 
 
 class EcommercePort(Protocol):
-    """Outbound port for e-commerce catalog and cart operations."""
+    """Outbound port for e-commerce catalog, cart, and user operations."""
 
     def get_all_products(self) -> list[dict[str, Any]]:
         ...
@@ -17,4 +17,10 @@ class EcommercePort(Protocol):
         ...
 
     def get_all_carts(self) -> list[dict[str, Any]]:
+        ...
+
+    def get_cart_by_id(self, cart_id: int) -> dict[str, Any]:
+        ...
+
+    def create_user(self, user_data: dict[str, Any]) -> dict[str, Any]:
         ...

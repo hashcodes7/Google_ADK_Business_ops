@@ -4,6 +4,9 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.services import product_service, cart_service
 
+AUTH_HEADER = {"Authorization": "Bearer token-business-49"}
+AUTH_HEADER_ADMIN = {"Authorization": "Bearer token-admin-01"}
+
 
 @pytest.fixture
 def client():
@@ -16,9 +19,9 @@ def test_get_products(client, monkeypatch):
                "description": "Test laptop", "category": "electronics",
                "image": ""}]
 
-    monkeypatch.setattr(product_service, "get_all_products", lambda: sample)
+    monkeypatch.setattr(product_service, "get_all_products", lambda context=None: sample)
 
-    response = client.get("/api/v1/products/")
+    response = client.get("/api/v1/products/", headers=AUTH_HEADER)
 
     assert response.status_code == 200
     assert response.json() == sample
@@ -29,9 +32,9 @@ def test_get_product(client, monkeypatch):
               "description": "Test laptop", "category": "electronics",
               "image": ""}
 
-    monkeypatch.setattr(product_service, "get_product", lambda pid: sample)
+    monkeypatch.setattr(product_service, "get_product", lambda pid, context=None: sample)
 
-    response = client.get("/api/v1/products/1")
+    response = client.get("/api/v1/products/1", headers=AUTH_HEADER)
 
     assert response.status_code == 200
     assert response.json()["id"] == 1
@@ -43,10 +46,10 @@ def test_get_products_by_category(client, monkeypatch):
                "image": ""}]
 
     monkeypatch.setattr(
-        product_service, "get_products_by_category", lambda category: sample
+        product_service, "get_products_by_category", lambda category, context=None: sample
     )
 
-    response = client.get("/api/v1/products/category/electronics")
+    response = client.get("/api/v1/products/category/electronics", headers=AUTH_HEADER)
 
     assert response.status_code == 200
     assert response.json()[0]["category"] == "electronics"
@@ -69,7 +72,7 @@ def test_create_product(client, monkeypatch):
         "image": ""
     }
 
-    response = client.post("/api/v1/products/", json=payload)
+    response = client.post("/api/v1/products/", json=payload, headers=AUTH_HEADER_ADMIN)
 
     assert response.status_code == 200
     assert response.json()["id"] == 101
@@ -78,9 +81,9 @@ def test_create_product(client, monkeypatch):
 def test_get_carts(client, monkeypatch):
     sample = [{"id": 1, "userId": 1, "products": []}]
 
-    monkeypatch.setattr(cart_service, "get_all_carts", lambda: sample)
+    monkeypatch.setattr(cart_service, "get_all_carts", lambda context=None: sample)
 
-    response = client.get("/api/v1/carts/")
+    response = client.get("/api/v1/carts/", headers=AUTH_HEADER)
 
     assert response.status_code == 200
     assert response.json() == sample
