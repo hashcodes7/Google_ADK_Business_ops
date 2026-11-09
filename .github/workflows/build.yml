@@ -29,13 +29,12 @@ jobs:
           pip install -r requirements.txt
           pip install pytest
 
-      - name: Run Tests
+      - name: Run Unit Tests (No API Key Required)
         env:
           ECOMMERCE_API_URL: https://fakestoreapi.com
-          GOOGLE_API_KEY: ${{ secrets.TEST_GOOGLE_API_KEY }}
           DEBUG: "false"
         run: |
-          pytest
+          pytest --ignore=tests/agent --ignore=tests/verify_live_fakestore.py --ignore=tests/per_api_test.py --ignore=tests/test_routes.py --ignore=tests/test_health.py
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
