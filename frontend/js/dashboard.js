@@ -30,6 +30,7 @@ class DashboardApp {
   async init() {
     this.bindGlobalScreens();
     this.setupNavigation();
+    this.setupProfileMenu();
     this.setupAuthSwitcher();
     this.setupSearch();
 
@@ -130,6 +131,8 @@ class DashboardApp {
     const roleBadge = document.getElementById('user-role-badge');
     const profileName = document.getElementById('user-profile-name');
     const profileRole = document.getElementById('user-profile-role');
+    const userAvatar = document.getElementById('user-avatar');
+    const dropdownUserDisplay = document.getElementById('dropdown-user-display');
     const select = document.getElementById('token-switch-select');
 
     if (roleBadge) {
@@ -139,14 +142,52 @@ class DashboardApp {
     }
     if (profileName) profileName.innerText = user.name;
     if (profileRole) profileRole.innerText = `${user.role} Account`;
+    if (userAvatar) userAvatar.innerText = (user.name || 'U').charAt(0).toUpperCase();
+    if (dropdownUserDisplay) dropdownUserDisplay.innerText = `${user.name} • ${user.role} Role`;
     if (select) select.value = window.api.getToken();
+  }
+
+  setupProfileMenu() {
+    const profileBtn = document.getElementById('btn-profile-toggle');
+    const dropdown = document.getElementById('profile-dropdown');
+
+    if (profileBtn && dropdown) {
+      profileBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = dropdown.classList.contains('show');
+        if (isOpen) {
+          dropdown.classList.remove('show');
+          profileBtn.classList.remove('active');
+        } else {
+          dropdown.classList.add('show');
+          profileBtn.classList.add('active');
+        }
+      });
+
+      // Prevent clicks inside the dropdown from closing it
+      dropdown.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+
+      // Close dropdown when clicking outside
+      document.addEventListener('click', () => {
+        if (dropdown.classList.contains('show')) {
+          dropdown.classList.remove('show');
+          profileBtn.classList.remove('active');
+        }
+      });
+    }
   }
 
   setupNavigation() {
     document.querySelectorAll('.nav-item').forEach(item => {
       item.addEventListener('click', (e) => {
-        e.preventDefault();
         const targetView = item.getAttribute('data-view');
+        // If it's an external link (like Swagger Docs without data-view), let default click happen
+        if (!targetView) {
+          return;
+        }
+        e.preventDefault();
         this.switchView(targetView);
       });
     });
@@ -190,6 +231,15 @@ class DashboardApp {
         window.api.setToken(newToken, newRole);
         this.updateUserUI();
         showToast(`Switched active context to ${select.options[select.selectedIndex].text}`, 'info');
+
+        // Clear chat history upon switching users with an account-specific greeting
+        if (window.assistantController) {
+          const roleLabel = newRole.role;
+          window.assistantController.clearChat(
+            `Session switched to ${newRole.name} (${roleLabel} Role). What operations would you like to perform?`
+          );
+        }
+
         if (this.currentView === 'products') window.productsController.loadProducts();
         if (this.currentView === 'orders') window.cartsController.loadCarts();
       });

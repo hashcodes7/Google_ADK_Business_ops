@@ -1,23 +1,24 @@
-# Business Operations Dashboard & Google ADK Backend (v8)
+# Business Operations Dashboard & Google ADK Backend (v7)
 
-A production-ready enterprise backend architecture combining **Hexagonal Architecture (Ports & Adapters)**, **Hot-Swappable Bearer Authentication**, **Password Gate (`123456`)**, **Role-Based Access Control (RBAC)**, an isolated **Handcrafted Utilitarian Frontend**, **FastAPI Modular Route Controllers**, **Pydantic Schemas**, a dedicated **Service Layer**, **Google Agent Development Kit (ADK)** with Gemini (`gemini-flash-lite-latest`), an **HTTPX Integration Layer**, and a **Dynamic Environment-Injected Test Suite**.
+A production-ready enterprise backend architecture combining **Hexagonal Architecture (Ports & Adapters)**, **Hot-Swappable Bearer Authentication**, **Role-Based Access Control (RBAC)**, **User vs Agent Channel Isolation**, **FastAPI Modular Route Controllers**, **Pydantic Schemas**, a dedicated **Service Layer**, **Google Agent Development Kit (ADK)** with Gemini (`gemini-flash-lite-latest`), an **HTTPX Integration Layer**, and a **Dynamic Environment-Injected Test Suite**.
 
 ---
 
-## What's New in v8: Handcrafted Frontend, Password Gate & Offline Fallback
+## What's New in v7: Hexagonal Architecture, Modular Auth & Channel Isolation
 
-In **v8**, the user interface was decoupled into an isolated folder and redesigned with a tactile, human-crafted utilitarian aesthetic:
-- **Handcrafted, Utilitarian Frontend (`frontend/`)**:
-  - Replaced hyper-polished AI gradients with a workshop/drafting aesthetic using mechanical typography (**Courier Prime** and **IBM Plex Sans**), warm paper backgrounds (`#F7F5F0`), ink drafting borders, and offset tactile drop shadows (`2px 2px 0px #1C1917`).
-  - Isolated architecture: Contains `index.html`, `css/style.css`, and modular vanilla JS controllers (`api.js`, `dashboard.js`, `products.js`, `carts.js`, `assistant.js`).
-- **Offline Fallback Screen**:
-  - If the FastAPI backend is offline, the UI displays a clean fallback card informing the user and providing the `python run.py --env dev` command with manual retry.
-- **Universal Password Gate (`123456`)**:
-  - Direct operator login (`POST /api/v1/auth/login`) with accounts `user49` (Business) and `admin` (Admin) authenticated with password `123456`.
-- **CORS Support**: `CORSMiddleware` configured to allow seamless access from local file systems and frontends.
-- **Bootstrap URL Print**: Displays `backend URL is : http://127.0.0.1:8000` on server startup.
-- **Milestone 8 Documentation**:
-  - `adk_ops_docs/v8_frontend_and_auth_gate.md`
+In **v7**, the system implements clean domain segregation, plug-and-play authentication, and explicit operational channel barriers:
+- **Hot-Swappable Auth Adapter (`app/core/auth.py`)**: All HTTP Bearer token parsing and identity resolution is centralized in a single file for zero-friction swapping to OAuth2/JWT without impacting services or routes.
+- **SecurityContext & Role-Based Access Control (`app/core/security.py`)**:
+  - `SecurityContext(user_id, role, actor)` carries caller identity, role (`Business` vs `Admin`), and caller origin (`human` vs `agent`).
+  - `require_permission(context, permission)` enforces domain permissions directly in shared application services.
+- **Channel Isolation & Segregation**:
+  - **User-Only Channel**: `POST /api/v1/users/` (Admin user provisioning) is exposed strictly via REST and withheld from LLM tools.
+  - **Agent-Only Channel**: `inspect_cart_by_id(cart_id)` is exposed strictly as a Google ADK tool for LLM operational analysis.
+  - **Shared Channels**: Catalog browsing/creation and cart listing are accessible to both human operators and autonomous agents.
+- **Hexagonal Ports & Driven Adapters (`app/ports/`, `app/integrations/`)**: Pure protocol definitions decoupled from external HTTP client details.
+- **Milestone 7 Documentation**:
+  - `adk_ops_docs/v7_hexagonal_auth_and_channels.md`
+  - `adk_ops_docs/v7_tools_and_api_guide.md`
 
 ---
 
@@ -28,59 +29,52 @@ Business_ops_GoogleADK/
 ├── app/                          # Main FastAPI application package
 │   ├── api/
 │   │   ├── routes/               # Modular API route controllers
-│   │   │   ├── auth.py           # [v8] Login (POST /auth/login) & Me endpoints
 │   │   │   ├── carts.py          # GET /api/v1/carts/
 │   │   │   ├── products.py       # GET, POST /api/v1/products/
 │   │   │   └── users.py          # [User-Only] POST /api/v1/users/ (Admin)
 │   │   └── router.py             # Route aggregator
 │   ├── core/
-│   │   ├── auth.py               # [v7/v8] Hot-swappable Auth Adapter & Password check
-│   │   ├── security.py           # SecurityContext, Roles & require_permission
+│   │   ├── auth.py               # [v7] Hot-swappable Auth Adapter & Dependency
+│   │   ├── security.py           # [v7] SecurityContext, Roles & require_permission
 │   │   ├── config.py             # Environment settings (Gemini, FakeStore)
 │   │   ├── exceptions.py         # Custom application exceptions (401, 403, 404, 502)
 │   │   └── logging.py            # Centralized logging configuration
-│   ├── ports/                    # Hexagonal Outbound Ports
+│   ├── ports/                    # [v7] Hexagonal Outbound Ports
 │   │   └── ecommerce_port.py     # Protocol for downstream commerce integrations
 │   ├── integrations/             # Outbound Driven Adapters
 │   │   └── ecommerce_client.py   # HTTPX client implementing ecommerce_port
 │   ├── schemas/                  # Request & Response Pydantic models
 │   │   ├── product.py            # ProductCreate, ProductResponse schemas
-│   │   └── user.py               # UserCreate, UserResponse schemas
+│   │   └── user.py               # [v7] UserCreate, UserResponse schemas
 │   ├── services/                 # Shared domain business services
 │   │   ├── cart_service.py       # Shopping cart service (RBAC checked)
 │   │   ├── product_service.py    # Product operations service (RBAC checked)
-│   │   └── user_service.py       # User provisioning service (RBAC checked)
-│   └── main.py                   # FastAPI app factory, CORS & lifespan setup
+│   │   └── user_service.py       # [v7] User provisioning service (RBAC checked)
+│   └── main.py                   # FastAPI application factory & lifespan setup
 ├── agents/                       # Google ADK Inbound Adapter
 │   ├── agent.py                  # Agent orchestrator (gemini-flash-lite-latest)
 │   └── tools/
 │       ├── cart_tools.py         # Carts tools + [Agent-Only] inspect_cart_by_id
 │       └── product_tools.py      # Product catalog tools
-├── frontend/                     # [v8] Decoupled Handcrafted Frontend
-│   ├── index.html                # 4-zone single-page app
-│   ├── css/style.css             # Workshop/drafting design system
-│   ├── js/                       # Inbound client controllers
-│   └── assets/                   # Static media
 ├── adk_ops_docs/                 # Versioned Milestone Guides
-│   ├── v1_run_steps.md
-│   ├── v2_calling_an_api.md
-│   ├── v3_architecture_and_services.md
-│   ├── v4_architecture_and_testing.md
-│   ├── v5_architecture_and_routing.md
-│   ├── v6_hexagonal_architecture.md
-│   ├── v7_hexagonal_auth_and_channels.md
-│   ├── v7_tools_and_api_guide.md
-│   └── v8_frontend_and_auth_gate.md # [v8] Frontend, auth gate & offline docs
+│   ├── v1_run_steps.md           # Milestone 1: Setup & execution
+│   ├── v2_calling_an_api.md      # Milestone 2: API integrations
+│   ├── v3_architecture_and_services.md # Milestone 3: Services layer
+│   ├── v4_architecture_and_testing.md  # Milestone 4: Test architecture
+│   ├── v5_architecture_and_routing.md  # Milestone 5: Modular routing
+│   ├── v6_hexagonal_architecture.md    # Milestone 6: Initial hexagonal model
+│   ├── v7_hexagonal_auth_and_channels.md # [v7] Auth & channel isolation
+│   └── v7_tools_and_api_guide.md       # [v7] API & tools access cookbook
 ├── environments/
-│   ├── .env.example
-│   ├── .env.dev
-│   └── .env.prod
+│   ├── .env.example              # Environment template
+│   ├── .env.dev                  # Development settings (git-ignored)
+│   └── .env.prod                 # Production settings (git-ignored)
 ├── tests/
-│   ├── test_hexagonal_architecture.py
-│   ├── test_products.py
-│   ├── test_routes.py
-│   └── per_api_test.py
-├── pytest.ini
+│   ├── test_hexagonal_architecture.py # [v7] End-to-end RBAC & channel test suite
+│   ├── test_products.py          # Schema & service mock tests
+│   ├── test_routes.py            # Route controller integration tests
+│   └── per_api_test.py           # Per-API route test suite
+├── pytest.ini                    # Pytest configuration & warnings filters
 └── run.py                        # Unified CLI runner (--env dev|prod)
 ```
 
@@ -88,22 +82,18 @@ Business_ops_GoogleADK/
 
 ## Quickstart Commands
 
-### 1. Run Local Backend Server
-```powershell
-python run.py --env dev
-```
-Terminal will output:
-```text
-⚡ Starting Business Operations Backend (dev)
-backend URL is : http://127.0.0.1:8000
-```
-
-### 2. Open Handcrafted Frontend
-Open `frontend/index.html` in your browser.
-- **Login Password**: `123456`
-- **User Accounts**: `user49` (Business) or `admin` (Admin).
-
-### 3. Run Backend Verification Tests
+### 1. Run Verification Test Suite
 ```powershell
 pytest tests/test_hexagonal_architecture.py -s -v --env-file dev
 ```
+
+### 2. Run Local Development Server
+```powershell
+python run.py --env dev
+```
+- Interactive API Docs (Swagger): `http://127.0.0.1:8000/docs`
+- Alternative ReDoc: `http://127.0.0.1:8000/redoc`
+
+### 3. Hot-Swappable Toy Authentication Tokens
+- **Business Operator**: `Authorization: Bearer token-business-49`
+- **Administrator**: `Authorization: Bearer token-admin-01`

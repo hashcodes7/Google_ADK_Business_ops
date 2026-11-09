@@ -1,4 +1,5 @@
 
+import os
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -23,7 +24,8 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
 
     model_config = SettingsConfigDict(
-        env_file=None,
+        env_file=os.getenv("ENV_FILE", f"environments/.env.{os.getenv('APP_ENV', 'dev')}"),
+        env_file_encoding="utf-8",
         case_sensitive=True,
         extra="ignore"
     )

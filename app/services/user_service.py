@@ -12,6 +12,12 @@ class UserService:
     def __init__(self, port: EcommercePort = ecommerce_client):
         self.port = port
 
+    def get_all_users(self, context: SecurityContext = None) -> list[dict[str, Any]]:
+        if context is None:
+            raise AuthenticationException("Security context is required.")
+        require_permission(context, Permission.USERS_READ)
+        return self.port.get_all_users()
+
     def create_user(
         self,
         username: str,

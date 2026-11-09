@@ -75,6 +75,9 @@ class EcommerceClient:
     def get_cart_by_id(self, cart_id: int):
         return self._request("GET", f"/carts/{cart_id}")
 
+    def get_all_users(self):
+        return self._request("GET", "/users")
+
     def create_user(self, user_data: dict):
         return self._request("POST", "/users", json=user_data)
 

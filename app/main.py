@@ -19,8 +19,13 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    import pathlib
+    frontend_path = pathlib.Path("frontend/index.html").resolve()
+    frontend_uri = frontend_path.as_uri()
+
     logger.info("Starting %s", settings.APP_NAME)
-    print("backend URL is : http://127.0.0.1:8000")
+    print(f"backend URL is : \033[1mhttp://127.0.0.1:8000\033[0m")
+    print(f"frontend URL is : \033[1m{frontend_uri}\033[0m")
 
     yield
 

@@ -10,6 +10,9 @@ from agents.tools.cart_tools import (
     get_all_carts,
     inspect_cart_by_id,  # Agent-only tool
 )
+from agents.tools.user_tools import (
+    get_all_users,  # Admin-only tool
+)
 
 # ---------------- AGENT ----------------
 
@@ -27,12 +30,13 @@ root_agent = Agent(
     - Create new products.
     - Retrieve all shopping carts.
     - Inspect a specific cart by ID using `inspect_cart_by_id`.
+    - Retrieve all users using `get_all_users` (requires Admin permission).
 
     Note:
     - Use tools whenever required.
     - Ask for missing details before creating a product.
     - Clearly report tool execution results.
-    - You do not have permission or tools to create or provision user accounts.
+    - If user asks for all users and does not have Admin permission, clearly inform them of the permission denial returned by the tool.
     """,
     tools=[
         get_all_products,
@@ -41,5 +45,6 @@ root_agent = Agent(
         create_product,
         get_all_carts,
         inspect_cart_by_id,  # Agent-only capability
+        get_all_users,  # Admin-only user listing capability
     ]
 )

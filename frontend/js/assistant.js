@@ -22,6 +22,14 @@ class AssistantController {
       sendBtn.addEventListener('click', () => this.sendMessage());
     }
 
+    const clearBtn = document.getElementById('btn-clear-chat');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        this.clearChat();
+        showToast('Chat history cleared', 'info');
+      });
+    }
+
     if (this.input) {
       this.input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -86,6 +94,22 @@ class AssistantController {
       this.appendMessage('assistant', `Unable to complete request: ${err.message}`);
     } finally {
       this.isProcessing = false;
+    }
+  }
+
+  clearChat(customGreeting = null) {
+    if (!this.historyContainer) return;
+    const greeting = customGreeting || "How can I help with store operations today? I can query products, inspect customer shopping carts, or summarize stock.";
+    this.historyContainer.innerHTML = `
+      <div class="chat-bubble system">
+        Google ADK Ecommerce Agent • gemini-flash-lite-latest
+      </div>
+      <div class="chat-bubble assistant">
+        ${this.escapeHtml(greeting)}
+      </div>
+    `;
+    if (this.input) {
+      this.input.value = '';
     }
   }
 }

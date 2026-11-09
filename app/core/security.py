@@ -18,6 +18,7 @@ class Permission(str, Enum):
     PRODUCTS_READ = "products:read"
     PRODUCTS_WRITE = "products:write"
     CARTS_READ = "carts:read"
+    USERS_READ = "users:read"
     USERS_WRITE = "users:write"
 
 
@@ -31,6 +32,7 @@ ROLE_PERMISSIONS: dict[Role, set[Permission]] = {
         Permission.PRODUCTS_READ,
         Permission.CARTS_READ,
         Permission.PRODUCTS_WRITE,
+        Permission.USERS_READ,
         Permission.USERS_WRITE,
     },
 }
