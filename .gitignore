@@ -42,3 +42,4 @@ agentic_rag_docs/.obsidian/
 # OS artifacts
 Thumbs.db
 .DS_Store
+tests/
