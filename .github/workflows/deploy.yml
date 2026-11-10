@@ -35,13 +35,6 @@ jobs:
           echo "Target Instance ID: [$INSTANCE_ID]"
           echo "Target Region:      [$REGION]"
 
-          echo "🔍 Checking if instance is recognized by SSM..."
-          aws ssm describe-instance-information \
-            --region "$REGION" \
-            --filters "Key=InstanceIds,Values=$INSTANCE_ID" \
-            --query "InstanceInformationList[*].[InstanceId,PingStatus,PlatformName,AgentVersion]" \
-            --output table
-
           # Read local deployment script and encode as base64 to avoid all YAML escaping issues
           SCRIPT_B64=$(base64 -w 0 scripts/deploy_remote.sh)
           COMPOSE_B64=$(base64 -w 0 docker-compose.yml)
