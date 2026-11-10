@@ -2,7 +2,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.services import product_service, cart_service
+from app.services.product_service import product_service
+from app.services.cart_service import cart_service
 
 AUTH_HEADER = {"Authorization": "Bearer token-business-49"}
 AUTH_HEADER_ADMIN = {"Authorization": "Bearer token-admin-01"}
@@ -32,7 +33,7 @@ def test_get_product(client, monkeypatch):
               "description": "Test laptop", "category": "electronics",
               "image": ""}
 
-    monkeypatch.setattr(product_service, "get_product", lambda pid, context=None: sample)
+    monkeypatch.setattr(product_service, "get_product", lambda product_id, context=None: sample)
 
     response = client.get("/api/v1/products/1", headers=AUTH_HEADER)
 

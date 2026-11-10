@@ -40,7 +40,7 @@ def test_get_all_products_route(monkeypatch):
 def test_get_single_product_route(monkeypatch):
     mock_item = {"id": 1, "title": "Backpack", "price": 49.99, "description": "Durable", "category": "bags", "image": ""}
     from app.services.product_service import product_service
-    monkeypatch.setattr(product_service, "get_product", lambda pid, context=None: mock_item)
+    monkeypatch.setattr(product_service, "get_product", lambda product_id, context=None: mock_item)
 
     with TestClient(app) as client:
         response = client.get("/api/v1/products/1", headers=AUTH_HEADER_BUSINESS)
