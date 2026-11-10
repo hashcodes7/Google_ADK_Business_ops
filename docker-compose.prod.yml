@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   backend:
-    image: ${DOCKER_IMAGE:-harsh/business-ops-backend:latest}
+    image: ${DOCKER_IMAGE}
     container_name: gadk-backend
     restart: unless-stopped
     ports:
